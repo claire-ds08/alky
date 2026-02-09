@@ -23,12 +23,12 @@
         
         #viewport { width: 100%; aspect-ratio: 1/1; border: 1px solid var(--border); background: #f9f9f9; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; border-radius: 15px; }
         
+        /* NO TRANSFORMATIONS ALLOWED HERE */
         video, #preview-img { 
             width: 100%; 
             height: 100%; 
             object-fit: cover; 
-            transform: scaleX(1) !important; 
-            -webkit-transform: scaleX(1) !important;
+            transform: none !important; 
         }
 
         .cam-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
@@ -39,7 +39,7 @@
 
         #timeline { width: 100%; max-width: 400px; margin-top: 30px; border-top: 2px solid #f0f0f0; padding-top: 20px; }
         .entry { margin-bottom: 30px; padding: 15px; border-radius: 15px; background: #fff; border: 1px solid #f0f0f0; }
-        .entry-img { width: 100%; border-radius: 10px; margin-bottom: 10px; }
+        .entry-img { width: 100%; border-radius: 10px; margin-bottom: 10px; transform: none !important; }
         .author-tag { font-weight: 800; font-size: 0.75rem; color: var(--accent); margin-bottom: 5px; display: block; }
         
         #toast { position: fixed; top: 20px; background: #333; color: #fff; padding: 8px 16px; border-radius: 20px; font-size: 0.7rem; display: none; z-index: 10000; }
@@ -62,8 +62,7 @@
     <div class="cam-controls">
         <button class="btn" id="open-btn" onclick="startCamera('user')" style="grid-column: span 2;">Open Camera</button>
         <button id="snap-btn" class="btn" style="display:none; background: #000; color: #fff;" onclick="takePhoto()">Snap</button>
-        <button id="flip-btn" class="btn" style="display:none;" onclick="flipCamera()">Flip</button>
-        <button id="close-btn" class="btn" style="display:none; grid-column: span 1;" onclick="stopCamera()">Cancel</button>
+        <button id="close-btn" class="btn" style="display:none; grid-column: span 2;" onclick="stopCamera()">Cancel</button>
     </div>
     <textarea id="msg-input" placeholder="Add a caption..."></textarea>
     <button class="btn btn-black" onclick="postNow()">Post Entry</button>
@@ -74,25 +73,19 @@
 </div>
 
 <script>
-    // 1. DATABASE & IDENTITY FIX
     const firebaseConfig = { databaseURL: "https://alky-bd03f-default-rtdb.asia-southeast1.firebasedatabase.app/" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database().ref('alky_v4_final'); 
 
-    // This restores the identity check
-    let userRole = localStorage.getItem('alky_user');
-    if (!userRole) {
-        userRole = confirm("Is this CD?") ? 'CD' : 'Nadine';
-        localStorage.setItem('alky_user', userRole);
-    }
+    let userRole = localStorage.getItem('alky_user') || (confirm("Is this CD?") ? 'CD' : 'Nadine');
+    localStorage.setItem('alky_user', userRole);
 
+    const statusEl = document.getElementById('db-status');
     firebase.database().ref(".info/connected").on("value", (snap) => {
-        const s = document.getElementById('db-status');
-        s.innerText = snap.val() ? "● ONLINE" : "● OFFLINE";
-        s.style.color = snap.val() ? "green" : "red";
+        statusEl.innerText = snap.val() ? "● ONLINE" : "● OFFLINE";
+        statusEl.style.color = snap.val() ? "green" : "red";
     });
 
-    // 2. TIMELINE LOAD
     db.on('value', (snapshot) => {
         const list = document.getElementById('list');
         const data = snapshot.val();
@@ -102,38 +95,34 @@
             const item = data[key];
             const div = document.createElement('div');
             div.className = 'entry';
-            div.innerHTML = `<span class="author-tag">${item.author}</span>${item.image ? `<img src="${item.image}" class="entry-img">` : ''}<div style="font-weight: 500;">${item.text || ''}</div><div style="font-size:0.6rem; color:#bbb; margin-top:8px;">${item.time}</div>`;
+            div.innerHTML = `
+                <span class="author-tag">${item.author}</span>
+                ${item.image ? `<img src="${item.image}" class="entry-img">` : ''}
+                <div style="font-weight: 500;">${item.text || ''}</div>
+                <div style="font-size:0.6rem; color:#bbb; margin-top:8px;">${item.time}</div>
+            `;
             list.appendChild(div);
         });
     });
 
-    // 3. CAMERA & FLIP FIX
     const v = document.getElementById('v');
     const preview = document.getElementById('preview-img');
     let stream = null; 
-    let mode = "user";
-    let capturedImg = null;
+    let capturedImg = null; 
 
-    async function startCamera(m) {
-        mode = m;
+    async function startCamera(mode) {
         if(stream) stream.getTracks().forEach(t => t.stop());
         try {
             stream = await navigator.mediaDevices.getUserMedia({ 
-                video: { facingMode: mode, width: { ideal: 1024 }, height: { ideal: 1024 } } 
+                video: { facingMode: mode, width: 1024, height: 1024 } 
             });
             v.srcObject = stream; 
             v.style.display = 'block';
             preview.style.display = 'none';
-            
             document.getElementById('open-btn').style.display = 'none';
             document.getElementById('snap-btn').style.display = 'block';
-            document.getElementById('flip-btn').style.display = 'block';
             document.getElementById('close-btn').style.display = 'block';
         } catch(e) { alert("Camera Error"); }
-    }
-
-    function flipCamera() {
-        startCamera(mode === "user" ? "environment" : "user");
     }
 
     function takePhoto() {
@@ -141,15 +130,16 @@
         canvas.width = v.videoWidth; 
         canvas.height = v.videoHeight;
         const ctx = canvas.getContext('2d');
+        
+        // RAW CAPTURE: No translation, no scaling, no flipping.
         ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
         
-        capturedImg = canvas.toDataURL('image/jpeg', 0.8);
+        capturedImg = canvas.toDataURL('image/jpeg', 0.7);
         preview.src = capturedImg; 
         preview.style.display = 'block';
         v.style.display = 'none';
         
         document.getElementById('snap-btn').style.display = 'none';
-        document.getElementById('flip-btn').style.display = 'none';
     }
 
     function stopCamera() {
@@ -158,30 +148,22 @@
         preview.style.display = 'none';
         document.getElementById('open-btn').style.display = 'block';
         document.getElementById('snap-btn').style.display = 'none'; 
-        document.getElementById('flip-btn').style.display = 'none';
         document.getElementById('close-btn').style.display = 'none';
     }
 
-    // 4. POSTING FIX
     function postNow() {
         const txt = document.getElementById('msg-input').value;
-        // Allows posting if there is text OR an image
-        if(!txt && !capturedImg) {
-            alert("Add a photo or a message first!");
-            return;
-        }
-
-        db.push({ 
-            author: userRole, 
-            text: txt, 
-            image: capturedImg, 
-            time: new Date().toLocaleString() 
+        if(!txt && !capturedImg) return;
+        db.push({
+            author: userRole,
+            text: txt,
+            image: capturedImg,
+            time: new Date().toLocaleString()
         }).then(() => {
             document.getElementById('msg-input').value = "";
-            capturedImg = null;
             stopCamera();
             showToast("Shared!");
-        }).catch(err => alert("Post failed: " + err));
+        });
     }
 
     function showToast(m) {
