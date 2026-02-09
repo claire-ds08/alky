@@ -10,44 +10,41 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
 
     <style>
-        :root { --bg: #ffffff; --text: #1a1a1a; --border: #eeeeee; --soft: #888; --accent: #ff4d4d; --link: #007aff; }
-        body { background: var(--bg); color: var(--text); font-family: -apple-system, system-ui, sans-serif; margin: 0; padding: 20px; padding-top: 60px; display: flex; flex-direction: column; align-items: center; overflow-x: hidden; }
+        :root { --bg: #ffffff; --text: #1a1a1a; --border: #eeeeee; --soft: #888; --accent: #ff4d4d; }
+        body { background: var(--bg); color: var(--text); font-family: -apple-system, system-ui, sans-serif; margin: 0; padding: 20px; padding-top: 60px; display: flex; flex-direction: column; align-items: center; }
         
         #header { text-align: center; margin-bottom: 30px; }
         #day-counter { font-size: 0.65rem; letter-spacing: 3px; color: var(--soft); text-transform: uppercase; font-weight: bold; }
-        .heart-pulse { display: inline-block; color: var(--accent); font-size: 0.9rem; animation: heartBeat 1.2s infinite; cursor: pointer; }
+        
+        /* The Connection Hub / Heart */
+        .heart-pulse { display: inline-block; color: var(--accent); font-size: 0.9rem; margin-left: 5px; animation: heartBeat 1.2s infinite; cursor: pointer; }
         @keyframes heartBeat { 0% { transform: scale(1); } 14% { transform: scale(1.3); } 28% { transform: scale(1); } 42% { transform: scale(1.3); } 70% { transform: scale(1); } }
 
         .section { width: 100%; max-width: 400px; margin-bottom: 30px; }
         
-        /* Restored All Moods */
+        /* RESTORED ALL 6 MOODS */
         .mood-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-        .mood-box { border: 1px solid var(--border); padding: 15px; text-align: center; border-radius: 8px; cursor: pointer; background: #fff; }
+        .mood-box { border: 1px solid var(--border); padding: 15px; text-align: center; border-radius: 8px; cursor: pointer; }
         .mood-box span { font-size: 1.5rem; display: block; }
         .mood-box p { margin: 5px 0 0 0; font-size: 0.6rem; color: var(--soft); font-weight: bold; text-transform: uppercase; }
 
-        #viewport { width: 100%; aspect-ratio: 1/1; border: 1px solid var(--border); background: #000; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; border-radius: 8px; }
+        #viewport { width: 100%; aspect-ratio: 1/1; border: 1px solid var(--border); background: #000; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; border-radius: 4px; }
         video, #preview-img { width: 100%; height: 100%; object-fit: cover; }
         
         .cam-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-        .btn { width: 100%; padding: 14px; border: 1px solid var(--text); background: #fff; font-size: 0.75rem; cursor: pointer; text-transform: uppercase; font-weight: bold; border-radius: 4px; }
+        .btn { width: 100%; padding: 14px; border: 1px solid var(--text); background: #fff; font-size: 0.75rem; cursor: pointer; text-transform: uppercase; font-weight: bold; }
         .btn-black { background: #000; color: #fff; }
 
         textarea { width: 100%; border: none; border-bottom: 1px solid var(--border); margin-top: 15px; padding: 12px 0; outline: none; font-size: 1rem; }
 
-        /* Shared Timeline View */
-        #timeline { width: 100%; max-width: 400px; margin-top: 20px; }
-        .entry { margin-bottom: 40px; border-bottom: 1px solid #f0f0f0; padding-bottom: 20px; width: 100%; }
-        .entry-img { width: 100%; border-radius: 8px; margin-bottom: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        .author-tag { font-weight: bold; font-size: 0.75rem; color: var(--accent); margin-bottom: 4px; display: block; }
+        /* THE SHARED TIMELINE */
+        #timeline { width: 100%; max-width: 400px; margin-top: 40px; border-top: 1px solid var(--border); padding-top: 20px; }
+        .entry { margin-bottom: 35px; border-bottom: 1px solid #f9f9f9; padding-bottom: 15px; }
+        .entry-img { width: 100%; border-radius: 4px; margin-bottom: 12px; }
+        .author-tag { font-weight: bold; font-size: 0.75rem; color: var(--accent); display: block; }
         
-        /* Comments Style */
-        .comment-area { background: #f9f9f9; padding: 12px; border-radius: 8px; margin-top: 12px; font-size: 0.85rem; }
-        .comment-line { margin-bottom: 6px; line-height: 1.4; border-bottom: 1px solid #eee; padding-bottom: 4px; }
-        .comment-line:last-child { border: none; }
-        .comment-user { font-weight: bold; font-size: 0.7rem; color: #555; margin-right: 5px; }
-        
-        .reply-link { color: var(--link); font-size: 0.75rem; font-weight: bold; cursor: pointer; text-decoration: none; margin-top: 10px; display: inline-block; }
+        .comment-box { background: #f9f9f9; padding: 10px; border-radius: 4px; margin-top: 10px; font-size: 0.85rem; }
+        .reply-btn { background: none; border: none; color: #007aff; font-size: 0.7rem; font-weight: bold; cursor: pointer; padding: 5px 0; display: block; }
 
         #toast { position: fixed; top: 20px; background: #333; color: #fff; padding: 10px 20px; border-radius: 50px; font-size: 0.7rem; display: none; z-index: 1000; }
     </style>
@@ -58,7 +55,8 @@
 
     <div id="header">
         <div id="day-counter">Counting... <span class="heart-pulse" onclick="iamHere()">♥</span></div>
-        <div style="font-size: 0.6rem; color: #bbb; margin-top: 8px; cursor: pointer;" onclick="resetIdentity()">Settings</div>
+        <div id="daily-prompt">“Take a photo of where you are right now.”</div>
+        <div style="font-size: 0.5rem; color: #bbb; margin-top: 10px; cursor: pointer;" onclick="resetIdentity()">Settings</div>
     </div>
 
     <div class="section">
@@ -79,19 +77,19 @@
             <span id="cam-label" style="color:#666; font-size:0.7rem;">READY</span>
         </div>
         <div class="cam-controls">
-            <button class="btn" id="cam-btn" onclick="startCam('user')" style="grid-column: span 2;">Open Camera</button>
-            <button id="snap-btn" class="btn btn-black" style="display:none;" onclick="takeSnap()">Snap</button>
-            <button id="flip-btn" class="btn" style="display:none;" onclick="flipCam()">Flip</button>
-            <button id="close-btn" class="btn" style="display:none; grid-column: span 2;" onclick="stopCam()">Cancel</button>
+            <button class="btn" id="open-cam" onclick="startCamera('user')" style="grid-column: span 2;">Open Camera</button>
+            <button id="snap-btn" class="btn btn-black" style="display:none;" onclick="captureImage()">Snap</button>
+            <button id="flip-btn" class="btn" style="display:none;" onclick="flipCamera()">Flip</button>
+            <button id="close-btn" class="btn" style="display:none; grid-column: span 2;" onclick="stopCamera()">Cancel</button>
         </div>
-        <textarea id="msg-input" placeholder="What's on your mind?"></textarea>
-        <button class="btn btn-black" style="margin-top:15px;" onclick="postEntry()">Post to Timeline</button>
+        <textarea id="msg-input" placeholder="Add a caption..."></textarea>
+        <button class="btn btn-black" style="margin-top:15px;" onclick="submitEntry()">Post to Timeline</button>
     </div>
 
     <div id="timeline"><div id="list"></div></div>
 
     <script>
-        // --- FIREBASE CONFIG ---
+        // --- CONFIG ---
         const firebaseConfig = { databaseURL: "https://alky-bd03f-default-rtdb.asia-southeast1.firebasedatabase.app/" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database().ref('alky_timeline');
@@ -103,75 +101,70 @@
         const NADINE_EMAIL = "aprilsia00@gmail.com";
 
         let userRole = localStorage.getItem('alky_role');
-        let currentFacing = "user";
+        let currentMode = "user";
 
         window.onload = () => {
             if (!userRole) {
                 userRole = confirm("Is this CD's phone?") ? 'CD' : 'Nadine';
                 localStorage.setItem('alky_role', userRole);
             }
-            const diffDays = Math.floor((new Date() - new Date("2025-08-12")) / (1000 * 60 * 60 * 24)) + 1;
+            
+            const startDate = new Date("2025-08-12");
+            const diffDays = Math.floor((new Date() - startDate) / (1000 * 60 * 60 * 24)) + 1;
             document.getElementById('day-counter').innerHTML = `Day ${diffDays} of Us <span class="heart-pulse" onclick="iamHere()">♥</span>`;
 
-            // THE REAL-TIME SHARED LISTENER
-            db.on('value', (snapshot) => {
-                renderTimeline(snapshot.val());
+            // ONE SHARED LISTENER
+            db.on('value', (snap) => {
+                const list = document.getElementById('list');
+                list.innerHTML = '';
+                const data = snap.val();
+                if(!data) return;
+
+                Object.keys(data).reverse().forEach(key => {
+                    const item = data[key];
+                    const div = document.createElement('div');
+                    div.className = 'entry';
+                    
+                    let comms = '';
+                    if (item.comments) {
+                        comms = `<div class="comment-box">`;
+                        Object.values(item.comments).forEach(c => {
+                            comms += `<div><b>${c.author}:</b> ${c.text}</div>`;
+                        });
+                        comms += `</div>`;
+                    }
+
+                    div.innerHTML = `
+                        ${item.img ? `<img src="${item.img}" class="entry-img">` : ''}
+                        <span class="author-tag">${item.author}</span>
+                        <div>${item.mood ? item.mood + ' ' : ''}${item.text || ''}</div>
+                        <div style="font-size:0.6rem; color:#bbb; margin-top:5px;">${item.time}</div>
+                        <button class="reply-btn" onclick="addComment('${key}')">Reply</button>
+                        ${comms}
+                    `;
+                    list.appendChild(div);
+                });
             });
         };
 
         function notify(mood) {
             const toast = document.getElementById('toast');
-            toast.style.display = 'block'; toast.innerText = "Pinging...";
+            toast.style.display = 'block';
             const recipient = (userRole === 'CD') ? NADINE_EMAIL : CD_EMAIL;
             emailjs.send(SERVICE_ID, TEMPLATE_ID, { mood: mood, send_to: recipient, time: new Date().toLocaleTimeString() })
             .then(() => { 
-                toast.innerText = "Sent to " + (userRole === 'CD' ? "Nadine" : "CD");
+                toast.innerText = "Pinged " + (userRole === 'CD' ? "Nadine" : "CD");
                 setTimeout(() => toast.style.display = 'none', 2000);
             });
         }
 
         function iamHere() { notify("I'm here! ♥"); alert("Heart ping sent!"); }
 
-        function renderTimeline(data) {
-            const list = document.getElementById('list');
-            list.innerHTML = ''; 
-            if (!data) return;
-
-            Object.keys(data).reverse().forEach(key => {
-                const item = data[key];
-                const div = document.createElement('div');
-                div.className = 'entry';
-                
-                let commentsHtml = '';
-                if (item.comments) {
-                    commentsHtml = `<div class="comment-area">`;
-                    Object.values(item.comments).forEach(c => {
-                        commentsHtml += `<div class="comment-line"><span class="comment-user">${c.author}:</span> ${c.text}</div>`;
-                    });
-                    commentsHtml += `</div>`;
-                }
-
-                div.innerHTML = `
-                    ${item.img ? `<img src="${item.img}" class="entry-img">` : ''}
-                    <span class="author-tag">${item.author}</span>
-                    <div style="font-size:1rem; line-height:1.4;">${item.mood ? item.mood + ' ' : ''}${item.text || ''}</div>
-                    <div style="font-size:0.65rem; color:#bbb; margin-top:5px;">${item.time}</div>
-                    <span class="reply-link" onclick="leaveComment('${key}')">Reply to ${item.author}</span>
-                    ${commentsHtml}
-                `;
-                list.appendChild(div);
-            });
-        }
-
-        function leaveComment(postId) {
-            const msg = prompt("Your reply:");
-            if (!msg) return;
-            db.child(postId).child('comments').push({
-                author: userRole,
-                text: msg,
-                time: new Date().toLocaleTimeString()
-            });
-            notify("💬 Reply: " + msg);
+        function addComment(postId) {
+            const txt = prompt("Your reply:");
+            if (!txt) return;
+            db.child(postId).child('comments').push({ author: userRole, text: txt });
+            notify("💬 Reply: " + txt);
         }
 
         function quickLog(emoji, text) { 
@@ -179,51 +172,51 @@
             db.push({ mood: emoji, text: text, author: userRole, time: new Date().toLocaleString() }); 
         }
 
-        function postEntry() {
+        function submitEntry() {
             const text = document.getElementById('msg-input').value;
             const img = capturedBase64;
             if (!text && !img) return;
             db.push({ mood: '📸', text: text, img: img, author: userRole, time: new Date().toLocaleString() });
-            notify(text ? "💌 New Post" : "📸 New Photo");
-            document.getElementById('msg-input').value = ""; stopCam(); capturedBase64 = null; document.getElementById('preview-img').style.display='none';
+            notify("📸 Shared a photo");
+            document.getElementById('msg-input').value = ""; stopCamera(); capturedBase64 = null; document.getElementById('preview-img').style.display='none';
         }
 
-        // --- CAMERA LOGIC ---
+        // --- CAMERA ---
         const v = document.getElementById('v');
         const previewImg = document.getElementById('preview-img');
         let stream = null; let capturedBase64 = null;
 
-        async function startCam(mode) {
-            if (stream) stopCam();
-            currentFacing = mode;
+        async function startCamera(mode) {
+            if (stream) stopCamera();
+            currentMode = mode;
             try {
-                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: currentFacing } });
+                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: mode } });
                 v.srcObject = stream; v.style.display = 'block';
-                document.getElementById('cam-btn').style.display = 'none';
+                document.getElementById('open-cam').style.display = 'none';
                 document.getElementById('snap-btn').style.display = 'block';
                 document.getElementById('flip-btn').style.display = 'block';
                 document.getElementById('close-btn').style.display = 'block';
-            } catch (e) { alert("Camera failed: " + e); }
+            } catch (e) { alert("Camera failed."); }
         }
 
-        function flipCam() { startCam(currentFacing === "user" ? "environment" : "user"); }
+        function flipCamera() { startCamera(currentMode === "user" ? "environment" : "user"); }
 
-        function stopCam() {
+        function stopCamera() {
             if (stream) stream.getTracks().forEach(t => t.stop());
-            v.style.display = 'none'; document.getElementById('cam-btn').style.display = 'block';
+            v.style.display = 'none'; document.getElementById('open-cam').style.display = 'block';
             document.getElementById('snap-btn').style.display = 'none'; document.getElementById('flip-btn').style.display = 'none';
             document.getElementById('close-btn').style.display = 'none';
         }
 
-        function takeSnap() {
+        function captureImage() {
             const canvas = document.createElement('canvas');
             canvas.width = v.videoWidth; canvas.height = v.videoHeight;
             const ctx = canvas.getContext('2d');
-            if (currentFacing === "user") { ctx.translate(canvas.width, 0); ctx.scale(-1, 1); }
+            if (currentMode === "user") { ctx.translate(canvas.width, 0); ctx.scale(-1, 1); }
             ctx.drawImage(v, 0, 0);
             capturedBase64 = canvas.toDataURL('image/jpeg', 0.5);
             previewImg.src = capturedBase64; previewImg.style.display = 'block';
-            stopCam();
+            stopCamera();
         }
 
         function resetIdentity() { localStorage.removeItem('alky_role'); location.reload(); }
