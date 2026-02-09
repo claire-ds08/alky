@@ -30,9 +30,11 @@
 
         #viewport { width: 100%; aspect-ratio: 1/1; border: 1px solid var(--border); background: #f9f9f9; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; border-radius: 15px; margin-top: 15px; }
         
-        /* Camera Styling */
         video, #preview-img { width: 100%; height: 100%; object-fit: cover; }
         
+        /* This class is toggled by JS to mirror the live view for the user */
+        .mirror-view { transform: scaleX(-1); }
+
         .cam-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
         .btn { padding: 12px; border: 1px solid #000; background: #fff; font-size: 0.7rem; cursor: pointer; text-transform: uppercase; font-weight: bold; border-radius: 10px; }
         .btn-black { background: #000; color: #fff; width: 100%; margin-top: 10px; }
@@ -109,19 +111,16 @@
             statusEl.innerText = "● ONLINE & SYNCED";
             statusEl.style.color = "green";
         } else {
-            statusEl.innerText = "● OFFLINE - CHECK INTERNET";
+            statusEl.innerText = "● OFFLINE";
             statusEl.style.color = "red";
         }
     });
 
-    // 4. LIVE TIMELINE
+    // 4. TIMELINE
     db.on('value', (snapshot) => {
         const list = document.getElementById('list');
         const data = snapshot.val();
-        if(!data) {
-            list.innerHTML = "No posts yet. Be the first!";
-            return;
-        }
+        if(!data) { list.innerHTML = "No posts yet."; return; }
         list.innerHTML = '';
         Object.keys(data).reverse().forEach(key => {
             const item = data[key];
@@ -145,7 +144,7 @@
         });
     });
 
-    // 5. POSTING FUNCTIONS
+    // 5. FUNCTIONS
     function postNow() {
         const txt = document.getElementById('msg-input').value;
         if(!txt && !capturedImg) return;
@@ -181,7 +180,7 @@
         setTimeout(()=> t.style.display='none', 2000);
     }
 
-    // 6. IMPROVED CAMERA LOGIC
+    // 6. TRUE-VIEW CAMERA LOGIC
     const v = document.getElementById('v');
     const preview = document.getElementById('preview-img');
     let stream = null; 
@@ -192,8 +191,12 @@
         if(stream) { stream.getTracks().forEach(t => t.stop()); }
         mode = m;
         
-        // Mirror the view ONLY if it's the front camera
-        v.style.transform = (mode === "user") ? "scaleX(-1)" : "scaleX(1)";
+        // Mirror the LIVE preview ONLY for the front camera (Selfie mode)
+        if (mode === "user") {
+            v.classList.add('mirror-view');
+        } else {
+            v.classList.remove('mirror-view');
+        }
         
         try {
             stream = await navigator.mediaDevices.getUserMedia({ 
@@ -227,16 +230,16 @@
         canvas.height = v.videoHeight;
         const ctx = canvas.getContext('2d');
         
-        // Match the mirrored look for selfies so the photo saves correctly
-        if(mode === "user") { 
-            ctx.translate(canvas.width, 0); 
-            ctx.scale(-1, 1); 
-        }
-        
+        // NO FLIPPING ON CANVAS. We capture exactly what the lens sees.
         ctx.drawImage(v, 0, 0);
+        
         capturedImg = canvas.toDataURL('image/jpeg', 0.6);
         preview.src = capturedImg; 
         preview.style.display = 'block';
+        
+        // Ensure preview image is never mirrored
+        preview.classList.remove('mirror-view');
+        
         stopCamera();
     }
 
