@@ -32,9 +32,7 @@
         
         video, #preview-img { width: 100%; height: 100%; object-fit: cover; }
         
-        /* This class is toggled by JS to mirror the live view for the user */
-        .mirror-view { transform: scaleX(-1); }
-
+        /* Mirroring removed to ensure "What You See Is What You Get" */
         .cam-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
         .btn { padding: 12px; border: 1px solid #000; background: #fff; font-size: 0.7rem; cursor: pointer; text-transform: uppercase; font-weight: bold; border-radius: 10px; }
         .btn-black { background: #000; color: #fff; width: 100%; margin-top: 10px; }
@@ -180,7 +178,7 @@
         setTimeout(()=> t.style.display='none', 2000);
     }
 
-    // 6. TRUE-VIEW CAMERA LOGIC
+    // 6. "WHAT YOU SEE IS WHAT YOU GET" CAMERA
     const v = document.getElementById('v');
     const preview = document.getElementById('preview-img');
     let stream = null; 
@@ -191,12 +189,8 @@
         if(stream) { stream.getTracks().forEach(t => t.stop()); }
         mode = m;
         
-        // Mirror the LIVE preview ONLY for the front camera (Selfie mode)
-        if (mode === "user") {
-            v.classList.add('mirror-view');
-        } else {
-            v.classList.remove('mirror-view');
-        }
+        // Remove all mirroring logic from the video element
+        v.style.transform = "none";
         
         try {
             stream = await navigator.mediaDevices.getUserMedia({ 
@@ -230,15 +224,15 @@
         canvas.height = v.videoHeight;
         const ctx = canvas.getContext('2d');
         
-        // NO FLIPPING ON CANVAS. We capture exactly what the lens sees.
+        // No transformations—just a direct capture of the video frame
         ctx.drawImage(v, 0, 0);
         
         capturedImg = canvas.toDataURL('image/jpeg', 0.6);
         preview.src = capturedImg; 
         preview.style.display = 'block';
         
-        // Ensure preview image is never mirrored
-        preview.classList.remove('mirror-view');
+        // Ensure preview image also has no mirror transform
+        preview.style.transform = "none";
         
         stopCamera();
     }
