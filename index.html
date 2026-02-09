@@ -11,22 +11,17 @@
 
     <style>
         :root { --bg: #ffffff; --text: #1a1a1a; --border: #eeeeee; --soft: #888; --accent: #ff4d4d; --link: #007aff; }
-        
-        /* Layout Fix */
         body, html { height: 100%; margin: 0; overflow: hidden; font-family: -apple-system, system-ui, sans-serif; }
         body { display: flex; flex-direction: column; background: var(--bg); }
 
-        /* FIXED TOP SECTION */
+        /* TOP SECTION */
         #top-container {
-            flex-shrink: 0; /* Prevents this from shrinking */
+            flex-shrink: 0;
             padding: 20px;
             padding-top: 50px;
             background: #fff;
             border-bottom: 2px solid #f0f0f0;
             z-index: 100;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
         }
         
         #header { text-align: center; margin-bottom: 15px; }
@@ -34,41 +29,27 @@
         .heart-pulse { display: inline-block; color: var(--accent); font-size: 0.9rem; animation: heartBeat 1.2s infinite; cursor: pointer; }
         @keyframes heartBeat { 0% { transform: scale(1); } 14% { transform: scale(1.3); } 28% { transform: scale(1); } 42% { transform: scale(1.3); } 70% { transform: scale(1); } }
 
-        .section { width: 100%; max-width: 400px; margin-bottom: 10px; }
-        .mood-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .mood-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 15px; }
         .mood-box { border: 1px solid var(--border); padding: 8px; text-align: center; border-radius: 8px; cursor: pointer; }
         .mood-box span { font-size: 1.1rem; display: block; }
-        .mood-box p { margin: 2px 0 0 0; font-size: 0.5rem; color: var(--soft); text-transform: uppercase; }
+        .mood-box p { margin: 2px 0 0 0; font-size: 0.5rem; color: var(--soft); }
 
-        #viewport { width: 100%; aspect-ratio: 16/9; border: 1px solid var(--border); background: #000; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; border-radius: 4px; }
+        #viewport { width: 100%; max-width: 400px; aspect-ratio: 1/1; margin: 0 auto; border: 1px solid var(--border); background: #000; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; border-radius: 8px; }
         video, #preview-img { width: 100%; height: 100%; object-fit: cover; }
         
-        .cam-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; }
-        .btn { width: 100%; padding: 12px; border: 1px solid var(--text); background: #fff; font-size: 0.7rem; cursor: pointer; text-transform: uppercase; font-weight: bold; }
+        .cam-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; max-width: 400px; margin-left: auto; margin-right: auto; }
+        .btn { padding: 12px; border: 1px solid var(--text); background: #fff; font-size: 0.65rem; cursor: pointer; text-transform: uppercase; font-weight: bold; border-radius: 4px; }
         .btn-black { background: #000; color: #fff; }
 
-        textarea { width: 100%; border: none; border-bottom: 1px solid var(--border); margin-top: 8px; padding: 8px 0; outline: none; font-size: 0.9rem; }
+        textarea { width: 100%; max-width: 400px; display: block; margin: 8px auto; border: none; border-bottom: 1px solid var(--border); padding: 8px 0; outline: none; font-size: 0.9rem; }
 
-        /* THE SCROLLABLE TIMELINE */
-        #timeline { 
-            flex-grow: 1; /* Takes up all remaining screen space */
-            overflow-y: auto; 
-            padding: 20px;
-            background: #fafafa;
-            -webkit-overflow-scrolling: touch;
-        }
-        
-        #timeline-label { font-size: 0.6rem; color: #bbb; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 20px; text-align: center; }
-
-        .entry { background: #fff; padding: 15px; border-radius: 12px; margin-bottom: 25px; border: 1px solid #eee; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+        /* SCROLLABLE TIMELINE */
+        #timeline { flex-grow: 1; overflow-y: auto; padding: 20px; background: #fafafa; -webkit-overflow-scrolling: touch; }
+        .entry { background: #fff; padding: 15px; border-radius: 12px; margin-bottom: 25px; border: 1px solid #eee; max-width: 400px; margin-left: auto; margin-right: auto; }
         .entry-img { width: 100%; border-radius: 8px; margin-bottom: 10px; }
         .author-tag { font-weight: bold; font-size: 0.7rem; color: var(--accent); }
-        
-        .comment-section { background: #f6f6f6; padding: 10px; border-radius: 8px; margin-top: 10px; font-size: 0.8rem; }
-        .comment-item { margin-bottom: 4px; border-bottom: 1px solid #eee; padding-bottom: 4px; }
-        .comment-author { font-weight: bold; font-size: 0.65rem; color: #777; }
-        
         .reply-btn { background: none; border: none; color: var(--link); font-size: 0.75rem; font-weight: bold; cursor: pointer; padding-top: 10px; display: block; }
+        
         #toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #333; color: #fff; padding: 10px 20px; border-radius: 50px; font-size: 0.7rem; display: none; z-index: 1000; }
     </style>
 </head>
@@ -79,35 +60,33 @@
     <div id="top-container">
         <div id="header">
             <div id="day-counter">Counting... <span class="heart-pulse" onclick="iamHere()">♥</span></div>
-            <div style="font-size: 0.5rem; color: #bbb; margin-top: 4px; cursor: pointer;" onclick="resetIdentity()">Settings</div>
+            <div style="font-size: 0.5rem; color: #bbb; cursor: pointer;" onclick="resetIdentity()">Settings</div>
         </div>
 
-        <div class="section">
-            <div class="mood-grid">
-                <div class="mood-box" onclick="quickLog('😊', 'happy')"><span>😊</span><p>Happy</p></div>
-                <div class="mood-box" onclick="quickLog('😤', 'mad')"><span>😤</span><p>Mad</p></div>
-                <div class="mood-box" onclick="quickLog('🫂', 'miss you')"><span>🫂</span><p>Miss You</p></div>
-            </div>
+        <div class="mood-grid">
+            <div class="mood-box" onclick="quickLog('😊', 'happy')"><span>😊</span><p>Happy</p></div>
+            <div class="mood-box" onclick="quickLog('😤', 'mad')"><span>😤</span><p>Mad</p></div>
+            <div class="mood-box" onclick="quickLog('🫂', 'miss you')"><span>🫂</span><p>Miss You</p></div>
         </div>
 
-        <div class="section">
-            <div id="viewport">
-                <video id="v" autoplay playsinline muted style="display:none;"></video>
-                <img id="preview-img" style="display:none;">
-                <span id="cam-label" style="color:#666; font-size:0.6rem;">READY</span>
-            </div>
-            <div class="cam-controls">
-                <button class="btn" id="main-cam-btn" onclick="startStream()" style="grid-column: span 2;">Camera</button>
-                <button id="snap-btn" class="btn btn-black" style="display:none;" onclick="captureImage()">Snap</button>
-                <button id="close-btn" class="btn" style="display:none;" onclick="stopCamera()">X</button>
-            </div>
-            <textarea id="msg-input" placeholder="Say something..."></textarea>
-            <button class="btn btn-black" style="margin-top:8px;" onclick="submitEntry()">Post</button>
+        <div id="viewport">
+            <video id="v" autoplay playsinline muted style="display:none;"></video>
+            <img id="preview-img" style="display:none;">
+            <span id="cam-label" style="color:#666; font-size:0.6rem;">OFF</span>
         </div>
+
+        <div class="cam-controls">
+            <button class="btn" id="start-btn" onclick="startStream('user')" style="grid-column: span 2;">Open Camera</button>
+            <button id="snap-btn" class="btn btn-black" style="display:none;" onclick="captureImage()">Snap</button>
+            <button id="flip-btn" class="btn" style="display:none;" onclick="flipCamera()">Flip</button>
+            <button id="close-btn" class="btn" style="display:none; grid-column: span 2;" onclick="stopCamera()">Cancel</button>
+        </div>
+
+        <textarea id="msg-input" placeholder="Add a caption..."></textarea>
+        <button class="btn btn-black" style="width:100%; max-width:400px; display:block; margin: 10px auto;" onclick="submitEntry()">Post to Timeline</button>
     </div>
 
     <div id="timeline">
-        <div id="timeline-label">—— Timeline History ——</div>
         <div id="list"></div>
     </div>
 
@@ -123,24 +102,30 @@
         const NADINE_EMAIL = "aprilsia00@gmail.com";
 
         let userRole = localStorage.getItem('alky_role');
+        let currentFacingMode = "user"; 
 
         window.onload = () => {
             if (!userRole) {
-                userRole = confirm("Identity: CD's phone?") ? 'CD' : 'Nadine';
+                userRole = confirm("Is this CD's phone?") ? 'CD' : 'Nadine';
                 localStorage.setItem('alky_role', userRole);
             }
             const diffDays = Math.floor((new Date() - new Date("2025-08-12")) / (1000 * 60 * 60 * 24)) + 1;
             document.getElementById('day-counter').innerHTML = `Day ${diffDays} <span class="heart-pulse" onclick="iamHere()">♥</span>`;
-            db.on('value', (snap) => renderTimeline(snap.val()));
+            
+            // Re-syncing the timeline
+            db.on('value', (snap) => {
+                const data = snap.val();
+                renderTimeline(data);
+            });
         };
 
         function notify(mood) {
             const toast = document.getElementById('toast');
-            toast.style.display = 'block'; toast.innerText = "Pinging...";
+            toast.style.display = 'block';
             const recipient = (userRole === 'CD') ? NADINE_EMAIL : CD_EMAIL;
             emailjs.send(SERVICE_ID, TEMPLATE_ID, { mood: mood, send_to: recipient, time: new Date().toLocaleTimeString() })
             .then(() => { 
-                toast.innerText = "Sent to " + (userRole === 'CD' ? "Nadine" : "CD");
+                toast.innerText = "Pinged " + (userRole === 'CD' ? "Nadine" : "CD");
                 setTimeout(() => toast.style.display = 'none', 2000);
             });
         }
@@ -149,7 +134,8 @@
 
         function renderTimeline(data) {
             const list = document.getElementById('list');
-            list.innerHTML = ''; if (!data) return;
+            list.innerHTML = ''; 
+            if (!data) return;
 
             Object.keys(data).reverse().forEach(key => {
                 const item = data[key];
@@ -158,22 +144,20 @@
                 
                 let comms = '';
                 if (item.comments) {
-                    comms = `<div class="comment-section">`;
+                    comms = `<div style="background:#f9f9f9; padding:8px; border-radius:5px; margin-top:8px; font-size:0.8rem;">`;
                     Object.values(item.comments).forEach(c => {
-                        comms += `<div class="comment-item"><span class="comment-author">${c.author}:</span> ${c.text}</div>`;
+                        comms += `<div><b>${c.author}:</b> ${c.text}</div>`;
                     });
                     comms += `</div>`;
                 }
 
                 div.innerHTML = `
                     ${item.img ? `<img src="${item.img}" class="entry-img">` : ''}
-                    <div>
-                        <span class="author-tag">${item.author}</span>
-                        <div style="font-size:0.9rem; margin: 4px 0;">${item.mood ? item.mood + ' ' : ''}${item.text || ''}</div>
-                        <div style="font-size:0.6rem; color:#bbb;">${item.time || ''}</div>
-                        <button class="reply-btn" onclick="addComment('${key}')">Reply</button>
-                        ${comms}
-                    </div>
+                    <span class="author-tag">${item.author}</span>
+                    <div style="font-size:0.9rem; margin:4px 0;">${item.mood ? item.mood+' ' : ''}${item.text || ''}</div>
+                    <div style="font-size:0.6rem; color:#bbb;">${item.time}</div>
+                    <button class="reply-btn" onclick="addComment('${key}')">Reply</button>
+                    ${comms}
                 `;
                 list.appendChild(div);
             });
@@ -183,7 +167,7 @@
             const txt = prompt("Comment:");
             if (!txt) return;
             db.child(postId).child('comments').push({ author: userRole, text: txt });
-            notify("💬 Comment: " + txt);
+            notify("💬 Commented on your post");
         }
 
         function quickLog(emoji, text) { 
@@ -196,33 +180,46 @@
             const img = capturedBase64;
             if (!text && !img) return;
             db.push({ mood: '📸', text: text, img: img, author: userRole, time: new Date().toLocaleString() });
-            notify("📸 New Post");
+            notify("📸 Posted a new photo");
             document.getElementById('msg-input').value = ""; stopCamera(); capturedBase64 = null; document.getElementById('preview-img').style.display='none';
         }
 
+        // --- CAMERA LOGIC ---
         const v = document.getElementById('v');
         const previewImg = document.getElementById('preview-img');
         let stream = null; let capturedBase64 = null;
 
-        async function startStream() {
-            stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
-            v.srcObject = stream; v.style.display = 'block';
-            document.getElementById('main-cam-btn').style.display = 'none';
-            document.getElementById('snap-btn').style.display = 'block';
-            document.getElementById('close-btn').style.display = 'block';
+        async function startStream(mode) {
+            if (stream) stopCamera();
+            currentFacingMode = mode;
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: currentFacingMode } });
+                v.srcObject = stream; v.style.display = 'block';
+                document.getElementById('start-btn').style.display = 'none';
+                document.getElementById('snap-btn').style.display = 'block';
+                document.getElementById('flip-btn').style.display = 'block';
+                document.getElementById('close-btn').style.display = 'block';
+            } catch (err) { alert("Camera Error: " + err); }
+        }
+
+        function flipCamera() {
+            startStream(currentFacingMode === "user" ? "environment" : "user");
         }
 
         function stopCamera() {
             if (stream) stream.getTracks().forEach(t => t.stop());
-            v.style.display = 'none'; document.getElementById('main-cam-btn').style.display = 'block';
-            document.getElementById('snap-btn').style.display = 'none'; document.getElementById('close-btn').style.display = 'none';
+            v.style.display = 'none'; 
+            document.getElementById('start-btn').style.display = 'block';
+            document.getElementById('snap-btn').style.display = 'none'; 
+            document.getElementById('flip-btn').style.display = 'none';
+            document.getElementById('close-btn').style.display = 'none';
         }
 
         function captureImage() {
             const canvas = document.createElement('canvas');
             canvas.width = v.videoWidth; canvas.height = v.videoHeight;
             const ctx = canvas.getContext('2d');
-            ctx.translate(canvas.width, 0); ctx.scale(-1, 1);
+            if (currentFacingMode === "user") { ctx.translate(canvas.width, 0); ctx.scale(-1, 1); }
             ctx.drawImage(v, 0, 0);
             capturedBase64 = canvas.toDataURL('image/jpeg', 0.5);
             previewImg.src = capturedBase64; previewImg.style.display = 'block';
