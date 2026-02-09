@@ -2,13 +2,23 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Connection Hub</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Us</title>
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Our Hub">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/833/833472.png">
+
     <style>
         :root { --bg: #ffffff; --text: #1a1a1a; --border: #eeeeee; --soft: #888; }
-        body { background: var(--bg); color: var(--text); font-family: -apple-system, system-ui, sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        body { 
+            background: var(--bg); color: var(--text); 
+            font-family: -apple-system, system-ui, sans-serif; 
+            margin: 0; padding: 20px; padding-top: 60px; /* Space for iOS Notch */
+            display: flex; flex-direction: column; align-items: center; 
+        }
         
-        /* Header & Day Counter */
         #header { text-align: center; margin-bottom: 30px; }
         #day-counter { font-size: 0.65rem; letter-spacing: 3px; color: var(--soft); text-transform: uppercase; font-weight: bold; }
         #daily-prompt { font-size: 0.85rem; margin-top: 8px; font-style: italic; color: #555; max-width: 300px; }
@@ -16,14 +26,12 @@
         .section { width: 100%; max-width: 400px; margin-bottom: 30px; }
         h2 { font-weight: 400; font-size: 0.7rem; text-align: center; letter-spacing: 2px; color: var(--soft); text-transform: uppercase; margin-bottom: 15px; }
 
-        /* Mood Grid */
         .mood-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
         .mood-box { border: 1px solid var(--border); padding: 15px; text-align: center; border-radius: 8px; cursor: pointer; transition: 0.2s; }
         .mood-box:active { background: #f0f0f0; }
         .mood-box span { font-size: 1.5rem; display: block; }
         .mood-box p { margin: 5px 0 0 0; font-size: 0.6rem; color: var(--soft); font-weight: bold; }
 
-        /* Camera Viewport */
         #viewport { width: 100%; aspect-ratio: 1/1; border: 1px solid var(--border); background: #000; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; border-radius: 4px; }
         video { width: 100%; height: 100%; object-fit: cover; }
         #preview-img { width: 100%; height: 100%; object-fit: cover; display: none; }
@@ -35,7 +43,6 @@
 
         textarea { width: 100%; border: none; border-bottom: 1px solid var(--border); margin-top: 15px; padding: 12px 0; outline: none; font-family: inherit; font-size: 1rem; box-sizing: border-box; }
 
-        /* Timeline */
         #timeline { width: 100%; max-width: 400px; margin-top: 40px; border-top: 1px solid var(--border); padding-top: 20px; }
         .entry { margin-bottom: 35px; position: relative; }
         .entry-img { width: 100%; border-radius: 4px; margin-bottom: 12px; border: 1px solid #eee; }
@@ -54,12 +61,11 @@
 <body>
 
     <div id="header">
-        <div id="day-counter">Loading Days...</div>
-        <div id="daily-prompt">“Take a photo of something you're doing right now.”</div>
+        <div id="day-counter">Counting...</div>
+        <div id="daily-prompt">“Loading today's prompt...”</div>
     </div>
 
     <div class="section">
-        <h2>Mood Checker</h2>
         <div class="mood-grid">
             <div class="mood-box" onclick="quickLog('😊', 'feeling happy')"><span>😊</span><p>Happy</p></div>
             <div class="mood-box" onclick="quickLog('😤', 'feeling mad')"><span>😤</span><p>Mad</p></div>
@@ -90,22 +96,14 @@
 
     <div id="timeline"><div id="list"></div></div>
     
-    <button class="btn" style="border:none; color:#bbb; font-size:0.6rem; margin-top:40px; background:none;" onclick="triggerHeart()">Send a silent Heart ❤️</button>
+    <button class="btn" style="border:none; color:#bbb; font-size:0.6rem; margin-top:40px; background:none;" onclick="triggerHeart()">Send a Heart ❤️</button>
     
     <div id="pulse-overlay"><div class="big-heart">❤️</div></div>
 
     <script>
         // ANNIVERSARY DATE: AUGUST 12, 2025
         const startDate = new Date("2025-08-12"); 
-
-        const prompts = [
-            "What's one thing you want to do together this weekend?",
-            "Send a photo of something that reminds you of her.",
-            "What was the best part of today?",
-            "Write a one-sentence appreciation.",
-            "If you could be anywhere right now, where would it be?",
-            "What song are you listening to right now?"
-        ];
+        const prompts = ["What's your dream date?", "Send a selfie!", "What do you love most about her?", "Think of a song.", "I'm sorry.", "I love you."];
 
         const v = document.getElementById('v');
         const previewImg = document.getElementById('preview-img');
@@ -115,15 +113,10 @@
         let currentFacingMode = "user";
 
         window.onload = () => {
-            // Calculate Day Counter
             const today = new Date();
-            const diffTime = Math.abs(today - startDate);
-            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
+            const diffDays = Math.floor((today - startDate) / (1000 * 60 * 60 * 24)) + 1;
             document.getElementById('day-counter').innerText = `Day ${diffDays} of Us`;
-            
-            // Set Random Prompt
             document.getElementById('daily-prompt').innerText = `“${prompts[Math.floor(Math.random() * prompts.length)]}”`;
-            
             loadHistory();
         };
 
@@ -149,15 +142,10 @@
             } catch (err) { alert("Camera access denied."); }
         }
 
-        function flipCamera() {
-            currentFacingMode = (currentFacingMode === "user") ? "environment" : "user";
-            startStream();
-        }
-
+        function flipCamera() { currentFacingMode = (currentFacingMode === "user") ? "environment" : "user"; startStream(); }
         function stopCamera() {
             if (stream) stream.getTracks().forEach(t => t.stop());
-            stream = null;
-            v.style.display = 'none';
+            stream = null; v.style.display = 'none';
             document.getElementById('main-cam-btn').style.display = 'block';
             document.getElementById('flip-btn').style.display = 'none';
             document.getElementById('close-btn').style.display = 'none';
@@ -178,7 +166,6 @@
         }
 
         function quickLog(emoji, text) { saveData({ mood: emoji, text: text, img: null }); }
-        
         function submitEntry() {
             const text = document.getElementById('msg-input').value;
             if (!text && !capturedBase64) return;
@@ -197,7 +184,7 @@
         }
 
         function deleteEntry(id) {
-            if (confirm("Delete this memory?")) {
+            if (confirm("Delete this?")) {
                 let history = JSON.parse(localStorage.getItem('bridge_vFinal') || '[]');
                 history = history.filter(i => i.id !== id);
                 localStorage.setItem('bridge_vFinal', JSON.stringify(history));
