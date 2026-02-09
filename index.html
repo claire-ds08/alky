@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Alky</title>
+    <title>Alky Sync</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
@@ -11,47 +11,53 @@
 
     <style>
         :root { --accent: #ff4d4d; --soft: #888; --border: #eeeeee; }
-        body { font-family: -apple-system, sans-serif; margin: 0; padding: 20px; padding-top: 60px; display: flex; flex-direction: column; align-items: center; background: #fff; }
+        body { font-family: -apple-system, sans-serif; margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; background: #fff; color: #1a1a1a; }
         
-        #header { text-align: center; margin-bottom: 25px; }
+        /* Fixed Header */
+        #header { text-align: center; padding-top: 40px; width: 100%; background: #fff; }
         #day-counter { font-size: 0.7rem; letter-spacing: 2px; color: var(--soft); font-weight: bold; text-transform: uppercase; }
-        .heart-pulse { display: inline-block; color: var(--accent); font-size: 1rem; animation: heartBeat 1.2s infinite; cursor: pointer; }
+        .heart-pulse { display: inline-block; color: var(--accent); font-size: 1.1rem; animation: heartBeat 1.2s infinite; cursor: pointer; }
         @keyframes heartBeat { 0% { transform: scale(1); } 14% { transform: scale(1.3); } 28% { transform: scale(1); } 42% { transform: scale(1.3); } 70% { transform: scale(1); } }
 
-        .section { width: 100%; max-width: 400px; margin-bottom: 20px; }
-        .mood-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-        .mood-box { border: 1px solid var(--border); padding: 15px; text-align: center; border-radius: 10px; cursor: pointer; }
-        .mood-box span { font-size: 1.5rem; display: block; }
-        .mood-box p { margin: 5px 0 0 0; font-size: 0.6rem; color: var(--soft); font-weight: bold; }
+        /* Status Light */
+        #db-status { font-size: 0.5rem; margin-top: 5px; color: orange; font-weight: bold; }
 
-        #viewport { width: 100%; aspect-ratio: 1/1; border: 1px solid var(--border); background: #f0f0f0; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; border-radius: 12px; }
+        .section { width: 100%; max-width: 400px; margin-top: 20px; }
+        
+        /* 6 Original Moods */
+        .mood-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .mood-box { border: 1px solid var(--border); padding: 12px; text-align: center; border-radius: 12px; cursor: pointer; background: #fff; transition: 0.2s; }
+        .mood-box:active { background: #f0f0f0; }
+        .mood-box span { font-size: 1.4rem; display: block; }
+        .mood-box p { margin: 4px 0 0 0; font-size: 0.55rem; color: var(--soft); font-weight: bold; text-transform: uppercase; }
+
+        /* POSTING AREA */
+        #viewport { width: 100%; aspect-ratio: 1/1; border: 1px solid var(--border); background: #f9f9f9; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; border-radius: 15px; margin-top: 15px; }
         video, #preview-img { width: 100%; height: 100%; object-fit: cover; }
-        
-        .cam-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-        .btn { width: 100%; padding: 14px; border: 1px solid #000; background: #fff; font-size: 0.7rem; cursor: pointer; text-transform: uppercase; font-weight: bold; border-radius: 8px; }
-        .btn-black { background: #000; color: #fff; }
+        .cam-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+        .btn { padding: 12px; border: 1px solid #000; background: #fff; font-size: 0.7rem; cursor: pointer; text-transform: uppercase; font-weight: bold; border-radius: 10px; }
+        .btn-black { background: #000; color: #fff; width: 100%; margin-top: 10px; }
 
-        textarea { width: 100%; border: none; border-bottom: 1px solid var(--border); margin: 15px 0; padding: 10px 0; outline: none; font-size: 1rem; }
+        textarea { width: 100%; border: none; border-bottom: 2px solid var(--border); margin: 10px 0; padding: 10px 0; outline: none; font-size: 1rem; box-sizing: border-box; }
 
-        /* TIMELINE */
-        #timeline { width: 100%; max-width: 400px; margin-top: 20px; }
-        .entry { margin-bottom: 40px; border-bottom: 1px solid #f0f0f0; padding-bottom: 20px; animation: fadeIn 0.5s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .entry-img { width: 100%; border-radius: 10px; margin-bottom: 12px; }
-        .author-tag { font-weight: bold; font-size: 0.8rem; color: var(--accent); margin-bottom: 5px; display: block; }
+        /* THE TIMELINE (Moved Up) */
+        #timeline { width: 100%; max-width: 400px; margin-top: 30px; border-top: 2px solid #f0f0f0; padding-top: 20px; }
+        .entry { margin-bottom: 30px; padding: 15px; border-radius: 15px; background: #fff; border: 1px solid #f0f0f0; box-shadow: 0 4px 10px rgba(0,0,0,0.02); }
+        .entry-img { width: 100%; border-radius: 10px; margin-bottom: 10px; }
+        .author-tag { font-weight: 800; font-size: 0.75rem; color: var(--accent); margin-bottom: 5px; display: block; }
+        .comment-item { font-size: 0.8rem; padding: 5px; border-top: 1px solid #eee; margin-top: 5px; }
         
-        .comment-section { background: #f9f9f9; padding: 10px; border-radius: 8px; margin-top: 10px; font-size: 0.85rem; }
-        .reply-btn { background: none; border: none; color: #007aff; font-size: 0.75rem; font-weight: bold; cursor: pointer; margin-top: 5px; }
-        #toast { position: fixed; top: 20px; background: #333; color: #fff; padding: 10px 20px; border-radius: 50px; font-size: 0.7rem; display: none; z-index: 9999; }
+        #toast { position: fixed; top: 20px; background: #333; color: #fff; padding: 8px 16px; border-radius: 20px; font-size: 0.7rem; display: none; z-index: 10000; }
     </style>
 </head>
 <body>
 
-<div id="toast">Sent!</div>
+<div id="toast">Update Sent</div>
 
 <div id="header">
-    <div id="day-counter">Counting... <span class="heart-pulse" onclick="iamHere()">♥</span></div>
-    <div style="font-size: 0.5rem; color: #bbb; margin-top: 10px; cursor: pointer;" onclick="resetIdentity()">Tap to Switch User</div>
+    <div id="day-counter">Day Counter <span class="heart-pulse" onclick="iamHere()">♥</span></div>
+    <div id="db-status">Checking Connection...</div>
+    <div style="font-size: 0.5rem; color: #bbb; cursor: pointer; margin-top: 5px;" onclick="resetIdentity()">Settings</div>
 </div>
 
 <div class="section">
@@ -69,25 +75,27 @@
     <div id="viewport">
         <video id="v" autoplay playsinline muted style="display:none;"></video>
         <img id="preview-img" style="display:none;">
-        <span id="cam-label">Camera Standby</span>
+        <span id="cam-label" style="font-size: 0.6rem; color: #999;">CAMERA READY</span>
     </div>
     <div class="cam-controls">
-        <button class="btn" id="open-btn" onclick="startCamera('user')" style="grid-column: span 2;">Open Camera</button>
-        <button id="snap-btn" class="btn btn-black" style="display:none;" onclick="takePhoto()">Snap</button>
+        <button class="btn" id="open-btn" onclick="startCamera('user')" style="grid-column: span 2;">Camera</button>
+        <button id="snap-btn" class="btn" style="display:none; background: #000; color: #fff;" onclick="takePhoto()">Snap</button>
         <button id="flip-btn" class="btn" style="display:none;" onclick="flipCamera()">Flip</button>
-        <button id="close-btn" class="btn" style="display:none; grid-column: span 2;" onclick="stopCamera()">X</button>
+        <button id="close-btn" class="btn" style="display:none; grid-column: span 2;" onclick="stopCamera()">Cancel</button>
     </div>
     <textarea id="msg-input" placeholder="Add a caption..."></textarea>
-    <button class="btn btn-black" onclick="postNow()">Post to Timeline</button>
+    <button class="btn btn-black" onclick="postNow()">Post Entry</button>
 </div>
 
-<div id="timeline"><div id="list"></div></div>
+<div id="timeline">
+    <div id="list" style="text-align: center; color: #bbb; font-size: 0.8rem;">Searching for memories...</div>
+</div>
 
 <script>
-    // 1. DATABASE SETUP
+    // 1. DATABASE
     const firebaseConfig = { databaseURL: "https://alky-bd03f-default-rtdb.asia-southeast1.firebasedatabase.app/" };
     firebase.initializeApp(firebaseConfig);
-    const db = firebase.database().ref('shared_timeline_v3'); // Forced fresh sync folder
+    const db = firebase.database().ref('alky_v4_final'); 
 
     // 2. IDENTITY
     let userRole = localStorage.getItem('alky_user');
@@ -96,59 +104,52 @@
         localStorage.setItem('alky_user', userRole);
     }
 
-    // 3. EMAIL/NOTIFY
-    (function() { emailjs.init("w-7MpanHNsBrGh6vo"); })();
-    function notify(msg) {
-        const toast = document.getElementById('toast');
-        toast.style.display = 'block';
-        const target = (userRole === 'CD') ? "aprilsia00@gmail.com" : "sarmientoclairedean@gmail.com";
-        emailjs.send("service_5zrzgge", "template_dj834xq", { mood: msg, send_to: target, time: new Date().toLocaleTimeString() })
-        .then(() => { toast.innerText = "Sent!"; setTimeout(()=> toast.style.display='none', 2000); });
-    }
+    // 3. SYNC STATUS CHECK
+    const statusEl = document.getElementById('db-status');
+    firebase.database().ref(".info/connected").on("value", (snap) => {
+        if (snap.val() === true) {
+            statusEl.innerText = "● ONLINE & SYNCED";
+            statusEl.style.color = "green";
+        } else {
+            statusEl.innerText = "● OFFLINE - CHECK INTERNET";
+            statusEl.style.color = "red";
+        }
+    });
 
-    // 4. THE HEART (Connection Hub)
-    function iamHere() { notify("I'm here! ♥"); alert("Heart ping sent!"); }
-
-    // 5. LIVE SYNC (The most important part)
+    // 4. THE LIVE FEED (Shared Timeline)
     db.on('value', (snapshot) => {
         const list = document.getElementById('list');
-        list.innerHTML = '';
         const data = snapshot.val();
-        if(!data) return;
-
-        // Display posts newest to oldest
+        if(!data) {
+            list.innerHTML = "No posts yet. Be the first!";
+            return;
+        }
+        list.innerHTML = '';
         Object.keys(data).reverse().forEach(key => {
             const item = data[key];
             const div = document.createElement('div');
             div.className = 'entry';
             
-            let comments = '';
+            let replies = '';
             if(item.replies) {
-                comments = `<div class="comment-section">`;
                 Object.values(item.replies).forEach(r => {
-                    comments += `<div><b>${r.by}:</b> ${r.text}</div>`;
+                    replies += `<div class="comment-item"><b>${r.by}:</b> ${r.text}</div>`;
                 });
-                comments += `</div>`;
             }
 
             div.innerHTML = `
-                ${item.image ? `<img src="${item.image}" class="entry-img">` : ''}
                 <span class="author-tag">${item.author}</span>
-                <div style="font-size:1rem;">${item.mood ? item.mood + ' ' : ''}${item.text || ''}</div>
-                <div style="font-size:0.6rem; color:#bbb; margin-top:5px;">${item.time}</div>
-                <button class="reply-btn" onclick="addReply('${key}')">Reply</button>
-                ${comments}
+                ${item.image ? `<img src="${item.image}" class="entry-img">` : ''}
+                <div style="font-weight: 500;">${item.mood ? item.mood + ' ' : ''}${item.text || ''}</div>
+                <div style="font-size:0.6rem; color:#bbb; margin-top:8px;">${item.time}</div>
+                <button style="border:none; background:none; color:#007aff; font-size:0.7rem; font-weight:bold; cursor:pointer; margin-top:10px;" onclick="addReply('${key}')">Reply</button>
+                <div id="replies-${key}">${replies}</div>
             `;
             list.appendChild(div);
         });
     });
 
-    // 6. POSTING LOGIC
-    function quickLog(emoji, label) {
-        db.push({ mood: emoji, text: label, author: userRole, time: new Date().toLocaleString() });
-        notify(emoji + " " + label);
-    }
-
+    // 5. FUNCTIONS
     function postNow() {
         const txt = document.getElementById('msg-input').value;
         const img = capturedImg;
@@ -161,22 +162,32 @@
             time: new Date().toLocaleString(),
             timestamp: Date.now()
         }).then(() => {
-            notify("New Post!");
             document.getElementById('msg-input').value = "";
             stopCamera();
             capturedImg = null;
             document.getElementById('preview-img').style.display='none';
-        });
+            showToast("Post Shared!");
+        }).catch(e => alert("Error: Post failed. Check Database Rules."));
+    }
+
+    function quickLog(emoji, label) {
+        db.push({ mood: emoji, text: label, author: userRole, time: new Date().toLocaleString() });
+        showToast(emoji + " Logged");
     }
 
     function addReply(id) {
-        const r = prompt("Your reply:");
+        const r = prompt("Reply:");
         if(!r) return;
         db.child(id).child('replies').push({ by: userRole, text: r });
-        notify("💬 Reply: " + r);
     }
 
-    // 7. CAMERA
+    function showToast(m) {
+        const t = document.getElementById('toast');
+        t.innerText = m; t.style.display = 'block';
+        setTimeout(()=> t.style.display='none', 2000);
+    }
+
+    // 6. CAMERA
     const v = document.getElementById('v');
     const preview = document.getElementById('preview-img');
     let stream = null; let capturedImg = null; let mode = "user";
@@ -191,7 +202,7 @@
             document.getElementById('snap-btn').style.display = 'block';
             document.getElementById('flip-btn').style.display = 'block';
             document.getElementById('close-btn').style.display = 'block';
-        } catch(e) { alert("Camera error."); }
+        } catch(e) { alert("Camera Error"); }
     }
 
     function flipCamera() { startCamera(mode === "user" ? "environment" : "user"); }
@@ -217,7 +228,6 @@
 
     function resetIdentity() { localStorage.removeItem('alky_user'); location.reload(); }
     
-    // Day Counter
     const diff = Math.floor((new Date() - new Date("2025-08-12")) / (1000 * 60 * 60 * 24)) + 1;
     document.getElementById('day-counter').innerHTML = `Day ${diff} of Us <span class="heart-pulse" onclick="iamHere()">♥</span>`;
 </script>
