@@ -23,7 +23,6 @@
         
         #viewport { width: 100%; aspect-ratio: 1/1; border: 1px solid var(--border); background: #f9f9f9; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; border-radius: 15px; }
         
-        /* Keep the True-View (No Mirroring) */
         video, #preview-img { 
             width: 100%; 
             height: 100%; 
@@ -61,10 +60,10 @@
         <img id="preview-img" style="display:none;">
     </div>
     <div class="cam-controls">
-        <button class="btn" id="open-btn" onclick="startCamera('user')" style="grid-column: span 1;">Camera</button>
-        <button class="btn" id="flip-btn" onclick="flipCamera()" style="display:none;">Flip</button>
-        <button id="snap-btn" class="btn" style="display:none; background: #000; color: #fff; grid-column: span 1;" onclick="takePhoto()">Snap</button>
-        <button id="close-btn" class="btn" style="display:none; grid-column: span 2;" onclick="stopCamera()">Cancel</button>
+        <button class="btn" id="open-btn" onclick="startCamera('user')" style="grid-column: span 2;">Open Camera</button>
+        <button id="snap-btn" class="btn" style="display:none; background: #000; color: #fff;" onclick="takePhoto()">Snap</button>
+        <button id="flip-btn" class="btn" style="display:none;" onclick="flipCamera()">Flip</button>
+        <button id="close-btn" class="btn" style="display:none; grid-column: span 1;" onclick="stopCamera()">Cancel</button>
     </div>
     <textarea id="msg-input" placeholder="Add a caption..."></textarea>
     <button class="btn btn-black" onclick="postNow()">Post Entry</button>
@@ -75,12 +74,17 @@
 </div>
 
 <script>
+    // 1. DATABASE & IDENTITY FIX
     const firebaseConfig = { databaseURL: "https://alky-bd03f-default-rtdb.asia-southeast1.firebasedatabase.app/" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database().ref('alky_v4_final'); 
 
-    let userRole = localStorage.getItem('alky_user') || (confirm("Is this CD?") ? 'CD' : 'Nadine');
-    localStorage.setItem('alky_user', userRole);
+    // This restores the identity check
+    let userRole = localStorage.getItem('alky_user');
+    if (!userRole) {
+        userRole = confirm("Is this CD?") ? 'CD' : 'Nadine';
+        localStorage.setItem('alky_user', userRole);
+    }
 
     firebase.database().ref(".info/connected").on("value", (snap) => {
         const s = document.getElementById('db-status');
@@ -88,6 +92,7 @@
         s.style.color = snap.val() ? "green" : "red";
     });
 
+    // 2. TIMELINE LOAD
     db.on('value', (snapshot) => {
         const list = document.getElementById('list');
         const data = snapshot.val();
@@ -102,6 +107,7 @@
         });
     });
 
+    // 3. CAMERA & FLIP FIX
     const v = document.getElementById('v');
     const preview = document.getElementById('preview-img');
     let stream = null; 
@@ -119,7 +125,6 @@
             v.style.display = 'block';
             preview.style.display = 'none';
             
-            // UI Updates
             document.getElementById('open-btn').style.display = 'none';
             document.getElementById('snap-btn').style.display = 'block';
             document.getElementById('flip-btn').style.display = 'block';
@@ -157,15 +162,26 @@
         document.getElementById('close-btn').style.display = 'none';
     }
 
+    // 4. POSTING FIX
     function postNow() {
         const txt = document.getElementById('msg-input').value;
-        if(!txt && !capturedImg) return;
-        db.push({ author: userRole, text: txt, image: capturedImg, time: new Date().toLocaleString() }).then(() => {
+        // Allows posting if there is text OR an image
+        if(!txt && !capturedImg) {
+            alert("Add a photo or a message first!");
+            return;
+        }
+
+        db.push({ 
+            author: userRole, 
+            text: txt, 
+            image: capturedImg, 
+            time: new Date().toLocaleString() 
+        }).then(() => {
             document.getElementById('msg-input').value = "";
             capturedImg = null;
             stopCamera();
             showToast("Shared!");
-        });
+        }).catch(err => alert("Post failed: " + err));
     }
 
     function showToast(m) {
