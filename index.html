@@ -23,14 +23,10 @@
         
         #viewport { width: 100%; aspect-ratio: 1/1; border: 1px solid var(--border); background: #f9f9f9; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; border-radius: 15px; }
         
-        /* FORCE NO MIRRORING: scaleX(1) overrides browser defaults */
-        video, #preview-img { 
-            width: 100%; 
-            height: 100%; 
-            object-fit: cover; 
-            transform: scaleX(1) !important; 
-            -webkit-transform: scaleX(1) !important;
-        }
+        video, #preview-img { width: 100%; height: 100%; object-fit: cover; }
+        
+        /* We let the phone mirror the preview because it's more natural for posing */
+        .mirrored { transform: scaleX(-1); }
 
         .cam-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
         .btn { padding: 12px; border: 1px solid #000; background: #fff; font-size: 0.7rem; cursor: pointer; text-transform: uppercase; font-weight: bold; border-radius: 10px; }
@@ -40,7 +36,7 @@
 
         #timeline { width: 100%; max-width: 400px; margin-top: 30px; border-top: 2px solid #f0f0f0; padding-top: 20px; }
         .entry { margin-bottom: 30px; padding: 15px; border-radius: 15px; background: #fff; border: 1px solid #f0f0f0; }
-        .entry-img { width: 100%; border-radius: 10px; margin-bottom: 10px; transform: scaleX(1) !important; }
+        .entry-img { width: 100%; border-radius: 10px; margin-bottom: 10px; }
         .author-tag { font-weight: 800; font-size: 0.75rem; color: var(--accent); margin-bottom: 5px; display: block; }
         
         #toast { position: fixed; top: 20px; background: #333; color: #fff; padding: 8px 16px; border-radius: 20px; font-size: 0.7rem; display: none; z-index: 10000; }
@@ -74,12 +70,10 @@
 </div>
 
 <script>
-    // 1. DATABASE SETUP
     const firebaseConfig = { databaseURL: "https://alky-bd03f-default-rtdb.asia-southeast1.firebasedatabase.app/" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database().ref('alky_v4_final'); 
 
-    // 2. IDENTITY
     let userRole = localStorage.getItem('alky_user') || (confirm("Is this CD?") ? 'CD' : 'Nadine');
     localStorage.setItem('alky_user', userRole);
 
@@ -89,7 +83,6 @@
         statusEl.style.color = snap.val() ? "green" : "red";
     });
 
-    // 3. TIMELINE
     db.on('value', (snapshot) => {
         const list = document.getElementById('list');
         const data = snapshot.val();
@@ -109,13 +102,13 @@
         });
     });
 
-    // 4. CAMERA LOGIC
     const v = document.getElementById('v');
     const preview = document.getElementById('preview-img');
     let stream = null; 
-    let capturedImg = null; 
+    let currentMode = "user";
 
     async function startCamera(mode) {
+        currentMode = mode;
         if(stream) stream.getTracks().forEach(t => t.stop());
         try {
             stream = await navigator.mediaDevices.getUserMedia({ 
@@ -123,8 +116,9 @@
             });
             v.srcObject = stream; 
             
-            // Hard reset of any transforms
-            v.style.transform = "scaleX(1)";
+            // Re-enable mirroring for the preview ONLY so it feels natural to pose
+            if(mode === "user") v.classList.add('mirrored');
+            else v.classList.remove('mirrored');
             
             v.style.display = 'block';
             preview.style.display = 'none';
@@ -140,14 +134,25 @@
         canvas.height = v.videoHeight;
         const ctx = canvas.getContext('2d');
         
-        // DRAW AS IS: No flipping, no translation.
+        // THE TRUE FIX: 
+        // If we are using the front camera, we MANUALLY flip the canvas pixels.
+        // This cancels out the "mirror" and saves the photo "Just as it is" in real life.
+        if (currentMode === "user") {
+            ctx.translate(canvas.width, 0);
+            ctx.scale(-1, 1);
+        }
+        
         ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
         
-        capturedImg = canvas.toDataURL('image/jpeg', 0.8);
+        const capturedImg = canvas.toDataURL('image/jpeg', 0.8);
         preview.src = capturedImg; 
-        
         preview.style.display = 'block';
         v.style.display = 'none';
+        
+        // Final preview is NOT mirrored
+        preview.classList.remove('mirrored');
+        
+        window.tempImage = capturedImg; 
         document.getElementById('snap-btn').style.display = 'none';
     }
 
@@ -162,16 +167,16 @@
 
     function postNow() {
         const txt = document.getElementById('msg-input').value;
-        if(!txt && !capturedImg) return;
+        if(!txt && !window.tempImage) return;
         db.push({
             author: userRole,
             text: txt,
-            image: capturedImg,
+            image: window.tempImage,
             time: new Date().toLocaleString()
         }).then(() => {
             document.getElementById('msg-input').value = "";
+            window.tempImage = null;
             stopCamera();
-            capturedImg = null;
             showToast("Shared!");
         });
     }
