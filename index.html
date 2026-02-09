@@ -10,6 +10,8 @@
     <link rel="apple-touch-icon" href="https://i.imgur.com/your-icon-link.png">
 
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
 
     <style>
         :root { --bg: #ffffff; --text: #1a1a1a; --border: #eeeeee; --soft: #888; }
@@ -37,17 +39,17 @@
         textarea { width: 100%; border: none; border-bottom: 1px solid var(--border); margin-top: 15px; padding: 12px 0; outline: none; font-family: inherit; font-size: 1rem; box-sizing: border-box; }
 
         #timeline { width: 100%; max-width: 400px; margin-top: 40px; border-top: 1px solid var(--border); padding-top: 20px; }
-        .entry { margin-bottom: 35px; position: relative; }
+        .entry { margin-bottom: 35px; position: relative; border-bottom: 1px solid #f9f9f9; padding-bottom: 15px; }
         .entry-img { width: 100%; border-radius: 4px; margin-bottom: 12px; }
-        .del-btn { position: absolute; right: 0; top: 0; background: none; border: none; color: #ccc; cursor: pointer; font-size: 1.2rem; }
+        .del-btn { position: absolute; right: 0; top: 0; background: none; border: none; color: #eee; cursor: pointer; font-size: 1.2rem; }
 
         .entry-footer { display: flex; align-items: flex-start; gap: 12px; }
         .entry-mood { font-size: 1.4rem; }
         .entry-text { font-size: 0.95rem; color: #333; line-height: 1.4; flex: 1; }
         .entry-time { font-size: 0.7rem; color: #bbb; margin-top: 4px; display: block; }
+        .author-tag { font-weight: bold; font-size: 0.75rem; color: #1a1a1a; display: block; margin-bottom: 2px; }
 
         #toast { position: fixed; top: 20px; background: #333; color: #fff; padding: 10px 20px; border-radius: 50px; font-size: 0.7rem; display: none; z-index: 1000; }
-        
         #identity-banner { font-size: 0.6rem; color: var(--soft); margin-top: 10px; cursor: pointer; }
     </style>
 </head>
@@ -91,17 +93,22 @@
     <div id="timeline"><div id="list"></div></div>
 
     <script>
-        // --- 1. CONFIGURATION ---
-        (function() { emailjs.init("w-7MpanHNsBrGh6vo"); })();
-        const SERVICE_ID = "service_jwcd7sp";
-        const TEMPLATE_ID = "template_dj834xq";
+        // --- 1. FIREBASE SETUP (REQUIRED FOR SHARED TIMELINE) ---
+        const firebaseConfig = {
+            databaseURL: "https://alky-bd03f-default-rtdb.asia-southeast1.firebasedatabase.app/" // <--- PASTE YOUR FIREBASE URL HERE
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database().ref('alky_timeline');
 
-        // --- 2. THE TWO EMAILS ---
+        // --- 2. EMAILJS CONFIGURATION ---
+        (function() { emailjs.init("w-7MpanHNsBrGh6vo"); })();
+        const SERVICE_ID = "service_5zrzgge";
+        const TEMPLATE_ID = "template_dj834xq";
         const MY_EMAIL = "sarmientoclairedean@gmail.com";
         const HER_EMAIL = "aprilsia00@gmail.com";
 
         const startDate = new Date("2025-08-12"); 
-        let userRole = localStorage.getItem('alky_role'); // 'me' or 'her'
+        let userRole = localStorage.getItem('alky_role');
 
         const v = document.getElementById('v');
         const previewImg = document.getElementById('preview-img');
@@ -112,7 +119,7 @@
 
         window.onload = () => {
             if (!userRole) {
-                const choice = confirm("Set up Alky: Is this YOUR phone? (Tap OK for Yes, Cancel for HER phone)");
+                const choice = confirm("Set up Alky: Is this YOUR phone? (OK = Him, Cancel = Her)");
                 userRole = choice ? 'me' : 'her';
                 localStorage.setItem('alky_role', userRole);
             }
@@ -121,7 +128,12 @@
             const today = new Date();
             const diffDays = Math.floor((today - startDate) / (1000 * 60 * 60 * 24)) + 1;
             document.getElementById('day-counter').innerText = `Day ${diffDays} of Us`;
-            loadHistory();
+
+            // Listen for Shared Timeline Updates
+            db.on('value', (snapshot) => {
+                const data = snapshot.val();
+                loadSharedHistory(data);
+            });
         };
 
         function resetIdentity() {
@@ -135,16 +147,8 @@
             const toast = document.getElementById('toast');
             toast.style.display = 'block';
             toast.innerText = "Notifying...";
-
-            // Send TO the other person
             const recipient = (userRole === 'me') ? HER_EMAIL : MY_EMAIL;
-
-            const params = { 
-                mood: mood, 
-                send_to: recipient, 
-                time: new Date().toLocaleTimeString() 
-            };
-
+            const params = { mood: mood, send_to: recipient, time: new Date().toLocaleTimeString() };
             emailjs.send(SERVICE_ID, TEMPLATE_ID, params).then(() => {
                 toast.innerText = "Notified " + (userRole === 'me' ? "her" : "him");
                 setTimeout(() => toast.style.display = 'none', 2000);
@@ -170,37 +174,42 @@
 
         function quickLog(emoji, text) { 
             notify(emoji + " " + text); 
-            saveData({ mood: emoji, text: text, img: null }); 
+            saveToFirebase({ mood: emoji, text: text, img: null }); 
         }
 
         function submitEntry() {
             const text = document.getElementById('msg-input').value;
             if (!text && !capturedBase64) return;
             notify(text ? "💌 Sent a message" : "📸 Sent a photo");
-            saveData({ mood: '💌', text: text, img: capturedBase64 });
+            saveToFirebase({ mood: '💌', text: text, img: capturedBase64 });
             document.getElementById('msg-input').value = ""; previewImg.style.display = 'none'; capturedBase64 = null;
         }
 
-        function saveData(data) {
-            const history = JSON.parse(localStorage.getItem('alky_v3') || '[]');
-            const newItem = { ...data, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' • ' + new Date().toLocaleDateString([], { month: 'short', day: 'numeric' }), id: Date.now() };
-            history.unshift(newItem);
-            localStorage.setItem('alky_v3', JSON.stringify(history));
-            loadHistory();
+        function saveToFirebase(data) {
+            const newItem = { 
+                ...data, 
+                author: userRole,
+                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' • ' + new Date().toLocaleDateString([], { month: 'short', day: 'numeric' }),
+                timestamp: Date.now() 
+            };
+            db.push(newItem);
         }
 
-        function deleteEntry(id) { if (confirm("Delete?")) { let history = JSON.parse(localStorage.getItem('alky_v3') || '[]'); history = history.filter(i => i.id !== id); localStorage.setItem('alky_v3', JSON.stringify(history)); loadHistory(); } }
-        
-        function loadHistory() {
+        function loadSharedHistory(data) {
             list.innerHTML = '';
-            const saved = JSON.parse(localStorage.getItem('alky_v3') || '[]');
-            saved.forEach(item => {
+            if (!data) return;
+            const entries = Object.keys(data).map(key => data[key]).reverse();
+            entries.forEach(item => {
                 const div = document.createElement('div');
                 div.className = 'entry';
-                div.innerHTML = `<button class="del-btn" onclick="deleteEntry(${item.id})">×</button>
+                const authorLabel = item.author === 'me' ? 'Him' : 'Her';
+                div.innerHTML = `
                     ${item.img ? `<img src="${item.img}" class="entry-img">` : ''}
                     <div class="entry-footer"><div class="entry-mood">${item.mood}</div>
-                    <div class="entry-text">${item.text}<span class="entry-time">${item.time}</span></div></div>`;
+                    <div class="entry-text">
+                        <span class="author-tag">${authorLabel}</span>
+                        ${item.text}<span class="entry-time">${item.time}</span>
+                    </div></div>`;
                 list.appendChild(div);
             });
         }
