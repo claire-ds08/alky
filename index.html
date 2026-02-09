@@ -21,6 +21,23 @@
         #day-counter { font-size: 0.65rem; letter-spacing: 3px; color: var(--soft); text-transform: uppercase; font-weight: bold; }
         #daily-prompt { font-size: 0.85rem; margin-top: 8px; font-style: italic; color: #555; max-width: 300px; }
 
+        /* The Pulse Heart */
+        .heart-pulse {
+            display: inline-block;
+            color: #ff4d4d;
+            font-size: 0.8rem;
+            margin-left: 5px;
+            animation: heartBeat 1.2s infinite;
+        }
+
+        @keyframes heartBeat {
+            0% { transform: scale(1); }
+            14% { transform: scale(1.3); }
+            28% { transform: scale(1); }
+            42% { transform: scale(1.3); }
+            70% { transform: scale(1); }
+        }
+
         .section { width: 100%; max-width: 400px; margin-bottom: 30px; }
         .mood-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
         .mood-box { border: 1px solid var(--border); padding: 15px; text-align: center; border-radius: 8px; cursor: pointer; transition: 0.2s; }
@@ -47,38 +64,21 @@
         .entry-mood { font-size: 1.4rem; }
         .entry-text { font-size: 0.95rem; color: #333; line-height: 1.4; flex: 1; }
         .entry-time { font-size: 0.7rem; color: #bbb; margin-top: 4px; display: block; }
-        .author-tag { font-weight: bold; font-size: 0.75rem; color: #1a1a1a; display: block; margin-bottom: 2px; }
+        .author-tag { font-weight: bold; font-size: 0.75rem; color: #ff4d4d; display: block; margin-bottom: 2px; }
 
         #toast { position: fixed; top: 20px; background: #333; color: #fff; padding: 10px 20px; border-radius: 50px; font-size: 0.7rem; display: none; z-index: 1000; }
         #identity-banner { font-size: 0.6rem; color: var(--soft); margin-top: 10px; cursor: pointer; }
-
-        /* The Pulse Heart */
-.heart-pulse {
-    display: inline-block;
-    color: #ff4d4d;
-    font-size: 0.8rem;
-    margin-left: 5px;
-    animation: heartBeat 1.2s infinite;
-}
-
-@keyframes heartBeat {
-    0% { transform: scale(1); }
-    14% { transform: scale(1.3); }
-    28% { transform: scale(1); }
-    42% { transform: scale(1.3); }
-    70% { transform: scale(1); }
-}
     </style>
 </head>
 <body>
 
     <div id="toast">Notifying...</div>
 
-   <div id="header">
-    <div id="day-counter">Counting... <span class="heart-pulse">♥</span></div>
-    <div id="daily-prompt">“Take a photo of where you are right now.”</div>
-    <div id="identity-banner" onclick="resetIdentity()">Settings</div>
-</div>
+    <div id="header">
+        <div id="day-counter">Counting... <span class="heart-pulse">♥</span></div>
+        <div id="daily-prompt">“Take a photo of where you are right now.”</div>
+        <div id="identity-banner" onclick="resetIdentity()">Settings</div>
+    </div>
 
     <div class="section">
         <div class="mood-grid">
@@ -110,9 +110,9 @@
     <div id="timeline"><div id="list"></div></div>
 
     <script>
-        // --- 1. FIREBASE SETUP (REQUIRED FOR SHARED TIMELINE) ---
+        // --- 1. FIREBASE SETUP ---
         const firebaseConfig = {
-            databaseURL: "https://alky-bd03f-default-rtdb.asia-southeast1.firebasedatabase.app/" // <--- PASTE YOUR FIREBASE URL HERE
+            databaseURL: "https://alky-bd03f-default-rtdb.asia-southeast1.firebasedatabase.app/"
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database().ref('alky_timeline');
@@ -121,11 +121,11 @@
         (function() { emailjs.init("w-7MpanHNsBrGh6vo"); })();
         const SERVICE_ID = "service_5zrzgge";
         const TEMPLATE_ID = "template_dj834xq";
-        const MY_EMAIL = "sarmientoclairedean@gmail.com";
-        const HER_EMAIL = "aprilsia00@gmail.com";
+        const CD_EMAIL = "sarmientoclairedean@gmail.com";
+        const NADINE_EMAIL = "aprilsia00@gmail.com";
 
         const startDate = new Date("2025-08-12"); 
-        let userRole = localStorage.getItem('alky_role');
+        let userRole = localStorage.getItem('alky_role'); // 'CD' or 'Nadine'
 
         const v = document.getElementById('v');
         const previewImg = document.getElementById('preview-img');
@@ -136,17 +136,16 @@
 
         window.onload = () => {
             if (!userRole) {
-                const choice = confirm("Set up Alky: Is this YOUR phone? (OK = Him, Cancel = Her)");
-                userRole = choice ? 'me' : 'her';
+                const choice = confirm("Set up Alky: Is this CD's phone? (OK = CD, Cancel = Nadine)");
+                userRole = choice ? 'CD' : 'Nadine';
                 localStorage.setItem('alky_role', userRole);
             }
-            document.getElementById('identity-banner').innerText = `Role: ${userRole === 'me' ? 'Him' : 'Her'} (Tap to Reset)`;
+            document.getElementById('identity-banner').innerText = `Role: ${userRole} (Tap to Reset)`;
             
             const today = new Date();
             const diffDays = Math.floor((today - startDate) / (1000 * 60 * 60 * 24)) + 1;
-            document.getElementById('day-counter').innerText = `Day ${diffDays} of Us`;
+            document.getElementById('day-counter').innerHTML = `Day ${diffDays} of Us <span class="heart-pulse">♥</span>`;
 
-            // Listen for Shared Timeline Updates
             db.on('value', (snapshot) => {
                 const data = snapshot.val();
                 loadSharedHistory(data);
@@ -164,10 +163,13 @@
             const toast = document.getElementById('toast');
             toast.style.display = 'block';
             toast.innerText = "Notifying...";
-            const recipient = (userRole === 'me') ? HER_EMAIL : MY_EMAIL;
+            
+            // Notification logic: Send TO the other person
+            const recipient = (userRole === 'CD') ? NADINE_EMAIL : CD_EMAIL;
+            
             const params = { mood: mood, send_to: recipient, time: new Date().toLocaleTimeString() };
             emailjs.send(SERVICE_ID, TEMPLATE_ID, params).then(() => {
-                toast.innerText = "Notified " + (userRole === 'me' ? "her" : "him");
+                toast.innerText = "Notified " + (userRole === 'CD' ? "Nadine" : "CD");
                 setTimeout(() => toast.style.display = 'none', 2000);
             });
         }
@@ -219,12 +221,11 @@
             entries.forEach(item => {
                 const div = document.createElement('div');
                 div.className = 'entry';
-                const authorLabel = item.author === 'me' ? 'Him' : 'Her';
                 div.innerHTML = `
                     ${item.img ? `<img src="${item.img}" class="entry-img">` : ''}
                     <div class="entry-footer"><div class="entry-mood">${item.mood}</div>
                     <div class="entry-text">
-                        <span class="author-tag">${authorLabel}</span>
+                        <span class="author-tag">${item.author}</span>
                         ${item.text}<span class="entry-time">${item.time}</span>
                     </div></div>`;
                 list.appendChild(div);
