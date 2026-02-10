@@ -29,13 +29,13 @@
 
         #viewport { width: 100%; aspect-ratio: 1/1; border: 1px solid var(--border); background: #f9f9f9; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; border-radius: 15px; margin-top: 15px; }
         
-        /* THE FIX: No transforms. This forces the iPad to show the raw camera feed. */
+        /* THE STICKY FIX: Force scaleX(1) which is "Normal/Unmirrored" */
         video, #preview-img { 
             width: 100%; 
             height: 100%; 
             object-fit: cover; 
-            transform: none !important; 
-            -webkit-transform: none !important;
+            transform: scaleX(1) !important; 
+            -webkit-transform: scaleX(1) !important;
         }
 
         .cam-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
@@ -131,7 +131,13 @@
         if(stream) stopCamera();
         mode = m;
         try {
-            stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: mode } });
+            stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { 
+                    facingMode: mode,
+                    width: { ideal: 1080 },
+                    height: { ideal: 1080 }
+                } 
+            });
             v.srcObject = stream; 
             v.style.display = 'block';
             preview.style.display = 'none';
@@ -139,7 +145,7 @@
             document.getElementById('snap-btn').style.display = 'block';
             document.getElementById('flip-btn').style.display = 'block';
             document.getElementById('close-btn').style.display = 'block';
-        } catch(e) { alert("Camera Error"); }
+        } catch(e) { alert("Camera Access Error"); }
     }
 
     function flipCamera() { startCamera(mode === "user" ? "environment" : "user"); }
@@ -158,9 +164,11 @@
         canvas.width = v.videoWidth; 
         canvas.height = v.videoHeight;
         const ctx = canvas.getContext('2d');
-        // DRAW EXACTLY WHAT IS ON SCREEN:
+        
+        // NO FLIPPING LOGIC: Pure direct copy
         ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
-        capturedImg = canvas.toDataURL('image/jpeg', 0.5);
+        
+        capturedImg = canvas.toDataURL('image/jpeg', 0.8);
         preview.src = capturedImg; 
         preview.style.display = 'block';
         v.style.display = 'none';
@@ -171,7 +179,13 @@
     function postNow() {
         const txt = document.getElementById('msg-input').value;
         if(!txt && !capturedImg) return;
-        db.push({ author: userRole, text: txt, image: capturedImg, time: new Date().toLocaleString() }).then(() => {
+        db.push({ 
+            author: userRole, 
+            text: txt, 
+            image: capturedImg, 
+            time: new Date().toLocaleString(), 
+            timestamp: Date.now() 
+        }).then(() => {
             document.getElementById('msg-input').value = "";
             capturedImg = null;
             preview.style.display = 'none';
